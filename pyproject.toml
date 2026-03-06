@@ -20,7 +20,7 @@ license = {file = "LICENSE"}
 #     "Environment :: GPU :: Apple Metal",    # Apple Metal support
 # ]
 
-dependencies = ["meshlib", "requests", "pymeshlab", "opencv-python", "scipy", "open3d", "plotly", "trimesh", "rembg"]
+dependencies = ["comfy-env>=0.2.32", "comfy-3d-viewers>=0.2.37", "trimesh>=4.0.0", "numpy", "tqdm"]
 
 [project.urls]
 Repository = "https://github.com/visualbruno/ComfyUI-Trellis2"

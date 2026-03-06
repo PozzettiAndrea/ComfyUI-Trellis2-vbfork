@@ -35,14 +35,14 @@ import comfy.model_management as mm
 from comfy.utils import load_torch_file, ProgressBar, common_upscale
 import comfy.utils
 
-from .trellis2.pipelines import Trellis2ImageTo3DPipeline
-from .trellis2.representations import Mesh, MeshWithVoxel
-from .trellis2.modules.attention import config
+from ..trellis2.pipelines import Trellis2ImageTo3DPipeline
+from ..trellis2.representations import Mesh, MeshWithVoxel
+from ..trellis2.modules.attention import config
 
-script_directory = os.path.dirname(os.path.abspath(__file__))
-comfy_path = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+script_directory = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+comfy_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
-BASE_CACHE_DIR = Path(os.path.dirname(os.path.realpath(__file__))) / "triton_caches"
+BASE_CACHE_DIR = Path(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))) / "triton_caches"
 #os.environ["TRITON_ALWAYS_COMPILE"] = "1"
 #os.environ["TORCHINDUCTOR_FORCE_DISABLE_CACHES"]="1"
 
@@ -335,8 +335,8 @@ class Trellis2LoadModel:
     OUTPUT_NODE = True
 
     def process(self, modelname, backend, device, low_vram, keep_models_loaded):
-        os.environ['OPENCV_IO_ENABLE_OPENEXR'] = '1'
-        os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"  # Can save GPU memory
+        # OPENCV_IO_ENABLE_OPENEXR and PYTORCH_CUDA_ALLOC_CONF are now set
+        # via [env_vars] in nodes/comfy-env.toml
         #os.environ["FLEX_GEMM_AUTOTUNE_CACHE_PATH"] = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'autotune_cache.json')
         #os.environ["FLEX_GEMM_AUTOTUNER_VERBOSE"] = '1'        
         os.environ['ATTN_BACKEND'] = backend

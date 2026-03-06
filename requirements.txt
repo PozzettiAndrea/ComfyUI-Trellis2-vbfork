@@ -1,8 +1,5 @@
-meshlib
-requests
-pymeshlab
-opencv-python
-scipy
-open3d
-plotly
-rembg
+comfy-env==0.2.32
+comfy-3d-viewers==0.2.37
+trimesh>=4.0.0
+numpy
+tqdm

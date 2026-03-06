@@ -1,0 +1,44 @@
+[cuda]
+packages = ["nvdiffrast", "flex_gemm", "cumesh", "o_voxel", "nvdiffrec_render", "torch", "torchvision", "flash-attn", "sageattention"]
+
+[pypi-dependencies]
+# HuggingFace / ML
+huggingface_hub = ">=0.20.0,<1.0.0"
+transformers = ">=4.56.0"
+safetensors = "*"
+timm = "*"
+
+# 3D processing
+trimesh = { version = ">=4.0.0", extras = ["easy"] }
+pymeshlab = "*"
+meshlib = "*"
+plyfile = "*"
+utils3d = "*"
+
+# Image processing
+opencv-python-headless = "*"
+pillow = ">=9.0.0"
+open3d = "*"
+
+# ML utilities
+kornia = "*"
+lpips = "*"
+einops = "*"
+easydict = "*"
+
+# General
+numpy = ">=1.21.0"
+scipy = "*"
+tqdm = "*"
+psutil = "*"
+rembg = "*"
+
+[env_vars]
+OPENCV_IO_ENABLE_OPENEXR = "1"
+PYTORCH_CUDA_ALLOC_CONF = "expandable_segments:True"
+
+[target.linux-64.pypi-dependencies]
+triton = ">=3.0.0"
+
+[target.win-64.pypi-dependencies]
+triton-windows = ">=3.5.0"
