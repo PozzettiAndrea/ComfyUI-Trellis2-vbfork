@@ -15,7 +15,7 @@ import gc
 import os
 import folder_paths
 import trimesh
-import o_voxel
+import o_voxel_vb
 import cumesh
 import nvdiffrast.torch as dr
 import cv2
@@ -1739,7 +1739,7 @@ class Trellis2ImageTo3DPipeline(Pipeline):
         vertices = torch.from_numpy(mesh.vertices).float()
         faces = torch.from_numpy(mesh.faces).long()
         
-        voxel_indices, dual_vertices, intersected = o_voxel.convert.mesh_to_flexible_dual_grid(
+        voxel_indices, dual_vertices, intersected = o_voxel_vb.convert.mesh_to_flexible_dual_grid(
             vertices.cpu(), faces.cpu(),
             grid_size=resolution,
             aabb=[[-0.5,-0.5,-0.5],[0.5,0.5,0.5]],
@@ -2158,7 +2158,7 @@ class Trellis2ImageTo3DPipeline(Pipeline):
         vertices = torch.from_numpy(mesh.vertices).float()
         faces = torch.from_numpy(mesh.faces).long()
         
-        voxel_indices, dual_vertices, intersected = o_voxel.convert.mesh_to_flexible_dual_grid(
+        voxel_indices, dual_vertices, intersected = o_voxel_vb.convert.mesh_to_flexible_dual_grid(
             vertices.cpu(), faces.cpu(),
             grid_size=resolution,
             aabb=[[-0.5,-0.5,-0.5],[0.5,0.5,0.5]],

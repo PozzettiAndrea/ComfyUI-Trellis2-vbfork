@@ -18,7 +18,7 @@ from .sparse_unet_vae import (
     chunked_apply,
 )
 from ...representations import Mesh
-from o_voxel.convert import flexible_dual_grid_to_mesh, tiled_flexible_dual_grid_to_mesh
+from o_voxel_vb.convert import flexible_dual_grid_to_mesh, tiled_flexible_dual_grid_to_mesh
 
 
 class FlexiDualGridVaeEncoder(SparseUnetVaeEncoder):

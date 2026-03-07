@@ -5,7 +5,7 @@ import numpy as np
 import pickle
 import torch
 from PIL import Image
-import o_voxel
+import o_voxel_vb
 import utils3d
 from .components import StandardDatasetBase
 from ..modules import sparse as sp
@@ -253,7 +253,7 @@ class SparseVoxelPbrDataset(SparseVoxelPbrVisMixin, StandardDatasetBase):
         )]}
 
     def read_pbr_voxel(self, root, instance):
-        coords, attr = o_voxel.io.read_vxz(os.path.join(root, f'{instance}.vxz'), num_threads=4)
+        coords, attr = o_voxel_vb.io.read_vxz(os.path.join(root, f'{instance}.vxz'), num_threads=4)
         feats = torch.concat([attr[k] for k in self.layout], dim=-1) / 255.0 * 2 - 1
         x = sp.SparseTensor(
             feats.float(),

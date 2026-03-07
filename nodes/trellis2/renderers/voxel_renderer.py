@@ -45,9 +45,9 @@ class VoxelRenderer:
                 ...
         """ 
         # lazy import
-        if 'o_voxel' not in globals():
-            import o_voxel
-        renderer = o_voxel.rasterize.VoxelRenderer(self.rendering_options)
+        if 'o_voxel_vb' not in globals():
+            import o_voxel_vb
+        renderer = o_voxel_vb.rasterize.VoxelRenderer(self.rendering_options)
         positions = voxel.position
         attrs = voxel.attrs if colors_overwrite is None else colors_overwrite
         voxel_size = voxel.voxel_size

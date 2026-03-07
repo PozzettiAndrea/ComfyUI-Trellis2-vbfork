@@ -31,9 +31,9 @@ class Voxel:
         
     def save(self, path):
         # lazy import
-        if 'o_voxel' not in globals():
-            import o_voxel
-        o_voxel.io.write(
+        if 'o_voxel_vb' not in globals():
+            import o_voxel_vb
+        o_voxel_vb.io.write(
             path,
             self.coords,
             self.split_attrs(),
@@ -41,9 +41,9 @@ class Voxel:
         
     def load(self, path):
         # lazy import
-        if 'o_voxel' not in globals():
-            import o_voxel
-        coord, attrs = o_voxel.io.read(path)
+        if 'o_voxel_vb' not in globals():
+            import o_voxel_vb
+        coord, attrs = o_voxel_vb.io.read(path)
         self.coords = coord.int().to(self.device)
         self.attrs = torch.cat([attrs[k] for k in attrs], dim=1).to(self.device)
         # build layout

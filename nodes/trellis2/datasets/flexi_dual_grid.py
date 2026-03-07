@@ -8,7 +8,7 @@ from ..modules import sparse as sp
 from ..renderers import MeshRenderer
 from ..representations import Mesh
 from ..utils.data_utils import load_balanced_group_indices
-import o_voxel
+import o_voxel_vb
 
 
 class FlexiDualGridVisMixin:
@@ -126,7 +126,7 @@ class FlexiDualGridDataset(FlexiDualGridVisMixin, StandardDatasetBase):
         return {'mesh': [Mesh(vertices=vertices, faces=faces)]}
     
     def read_dual_grid(self, root, instance):
-        coords, attr = o_voxel.io.read_vxz(os.path.join(root, f'{instance}.vxz'), num_threads=4)
+        coords, attr = o_voxel_vb.io.read_vxz(os.path.join(root, f'{instance}.vxz'), num_threads=4)
         vertices = sp.SparseTensor(
             (attr['vertices'] / 255.0).float(),
             torch.cat([torch.zeros_like(coords[:, 0:1]), coords], dim=-1),
