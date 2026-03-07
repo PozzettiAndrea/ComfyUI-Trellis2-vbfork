@@ -35,9 +35,9 @@ import comfy.model_management as mm
 from comfy.utils import load_torch_file, ProgressBar, common_upscale
 import comfy.utils
 
-from ..trellis2.pipelines import Trellis2ImageTo3DPipeline
-from ..trellis2.representations import Mesh, MeshWithVoxel
-from ..trellis2.modules.attention import config
+from .trellis2.pipelines import Trellis2ImageTo3DPipeline
+from .trellis2.representations import Mesh, MeshWithVoxel
+from .trellis2.modules.attention import config
 
 script_directory = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 comfy_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
