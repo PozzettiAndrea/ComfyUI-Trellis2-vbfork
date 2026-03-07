@@ -360,7 +360,16 @@ class Trellis2LoadModel:
             
         dinov3_model_path = os.path.join(folder_paths.models_dir,"facebook","dinov3-vitl16-pretrain-lvd1689m","model.safetensors")
         if not os.path.exists(dinov3_model_path):
-            raise Exception("Facebook Dinov3 model not found in models/facebook/dinov3-vitl16-pretrain-lvd1689m folder")
+            print("DINOv3 model not found locally, downloading from public mirror...")
+            from huggingface_hub import hf_hub_download
+            dinov3_dir = os.path.join(folder_paths.models_dir, "facebook", "dinov3-vitl16-pretrain-lvd1689m")
+            os.makedirs(dinov3_dir, exist_ok=True)
+            hf_hub_download(
+                "PIA-SPACE-LAB/dinov3-vitl-pretrain-lvd1689m",
+                "model.safetensors",
+                local_dir=dinov3_dir,
+            )
+            print("DINOv3 model downloaded successfully.")
         
         trellis_image_large_path = os.path.join(folder_paths.models_dir,"microsoft","TRELLIS-image-large","ckpts","ss_dec_conv3d_16l8_fp16.safetensors")
         if not os.path.exists(trellis_image_large_path):
