@@ -10,3 +10,6 @@ o-voxel/*
 nvdiffrast/*
 nvdiffrec/*
 fp8_models/*
+.ipynb_checkpoints/
+nodes/.ipynb_checkpoints/
+nodes/_env_*

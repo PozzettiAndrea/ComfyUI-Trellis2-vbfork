@@ -1,5 +1,5 @@
 [cuda]
-packages = ["nvdiffrast", "flex_gemm", "cumesh", "o_voxel", "nvdiffrec_render", "torch", "torchvision", "flash-attn", "sageattention"]
+packages = ["nvdiffrast", "flex_gemm", "cumesh", "o_voxel_vb", "nvdiffrec_render", "torch", "torchvision", "flash-attn", "sageattention"]
 
 [pypi-dependencies]
 # HuggingFace / ML
@@ -14,6 +14,7 @@ pymeshlab = "*"
 meshlib = "*"
 plyfile = "*"
 utils3d = "*"
+zstandard = "*"
 
 # Image processing
 opencv-python-headless = "*"

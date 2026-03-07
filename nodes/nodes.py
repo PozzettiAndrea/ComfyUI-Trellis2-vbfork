@@ -23,7 +23,7 @@ import copy
 import pymeshlab
 
 import cumesh as CuMesh
-import o_voxel
+import o_voxel_vb
 
 import meshlib.mrmeshnumpy as mrmeshnumpy
 import meshlib.mrmeshpy as mrmeshpy
@@ -2512,7 +2512,7 @@ class Trellis2OvoxelExportToGLB:
     def process(self, mesh, resolution, texture_size, target_face_num):
         mesh_copy = copy.deepcopy(mesh)
 
-        glb = o_voxel.postprocess.to_glb(
+        glb = o_voxel_vb.postprocess.to_glb(
             vertices=mesh_copy.vertices,
             faces=mesh_copy.faces,
             attr_volume=mesh_copy.attrs,
@@ -2557,7 +2557,7 @@ class Trellis2TrimeshToMeshWithVoxel:
         vertices = torch.from_numpy(mesh.vertices).float()
         faces = torch.from_numpy(mesh.faces).long()
         
-        voxel_indices, dual_vertices, intersected = o_voxel.convert.mesh_to_flexible_dual_grid(
+        voxel_indices, dual_vertices, intersected = o_voxel_vb.convert.mesh_to_flexible_dual_grid(
             vertices.cpu(), faces.cpu(),
             grid_size=resolution,
             aabb=[[-0.5,-0.5,-0.5],[0.5,0.5,0.5]],
