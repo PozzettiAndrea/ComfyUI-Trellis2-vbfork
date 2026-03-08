@@ -333,35 +333,26 @@ class Trellis2ImageTo3DPipeline(Pipeline):
     def preprocess_image(self, input: Image.Image) -> Image.Image:
         """
         Preprocess the input image.
+        Expects RGBA input. Uses alpha to crop to foreground and premultiply.
+        If RGB, converts to RGBA with full alpha (treats entire image as foreground).
         """
-        # if has alpha channel, use it directly; otherwise, remove background
-        has_alpha = False
-        if input.mode == 'RGBA':
-            alpha = np.array(input)[:, :, 3]
-            if not np.all(alpha == 255):
-                has_alpha = True
+        if input.mode != 'RGBA':
+            input = input.convert('RGBA')
         max_size = max(input.size)
         scale = min(1, 1024 / max_size)
         if scale < 1:
             input = input.resize((int(input.width * scale), int(input.height * scale)), Image.Resampling.LANCZOS)
-        if has_alpha:
-            output = input
-        else:
-            input = input.convert('RGB')
-            if self.low_vram:
-                self.rembg_model.to(self.device)
-            output = self.rembg_model(input)
-            if self.low_vram:
-                self.rembg_model.cpu()
-        output_np = np.array(output)
+        output_np = np.array(input)
         alpha = output_np[:, :, 3]
         bbox = np.argwhere(alpha > 0.8 * 255)
+        if len(bbox) == 0:
+            return input.convert('RGB')
         bbox = np.min(bbox[:, 1]), np.min(bbox[:, 0]), np.max(bbox[:, 1]), np.max(bbox[:, 0])
         center = (bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2
         size = max(bbox[2] - bbox[0], bbox[3] - bbox[1])
         size = int(size * 1)
         bbox = center[0] - size // 2, center[1] - size // 2, center[0] + size // 2, center[1] + size // 2
-        output = output.crop(bbox)  # type: ignore
+        output = input.crop(bbox)
         output = np.array(output).astype(np.float32) / 255
         output = output[:, :, :3] * output[:, :, 3:4]
         output = Image.fromarray((output * 255).astype(np.uint8))

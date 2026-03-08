@@ -166,8 +166,26 @@ def tensor_batch_to_pil_list(images: torch.Tensor, max_views: int = 4) -> list[I
     if images.ndim == 3:
         return [tensor2pil(images)]
 
-    raise ValueError(f"Unsupported IMAGE tensor shape: {tuple(images.shape)}")    
-    
+    raise ValueError(f"Unsupported IMAGE tensor shape: {tuple(images.shape)}")
+
+def apply_mask_to_images(images: list[Image.Image], mask=None) -> list[Image.Image]:
+    """Composite an optional ComfyUI MASK onto PIL images as alpha channel.
+    If no mask, returns RGBA images with full-white alpha (entire image = foreground).
+    ComfyUI masks: 0=keep, 1=remove. We invert for alpha: 255=keep, 0=remove.
+    """
+    if mask is not None:
+        result = []
+        for i, img in enumerate(images):
+            img = img.convert('RGBA')
+            m = mask[min(i, mask.shape[0] - 1)]
+            m_np = ((1.0 - m.cpu().numpy()) * 255).clip(0, 255).astype(np.uint8)
+            m_pil = Image.fromarray(m_np).resize(img.size, Image.LANCZOS)
+            img.putalpha(m_pil)
+            result.append(img)
+        return result
+    else:
+        return [img.convert('RGBA') for img in images]
+
 def convert_tensor_images_to_pil(images):
     pil_array = []
     
@@ -369,6 +387,11 @@ class Trellis2LoadModel:
                 "model.safetensors",
                 local_dir=dinov3_dir,
             )
+            hf_hub_download(
+                "PIA-SPACE-LAB/dinov3-vitl-pretrain-lvd1689m",
+                "config.json",
+                local_dir=dinov3_dir,
+            )
             print("DINOv3 model downloaded successfully.")
         
         trellis_image_large_path = os.path.join(folder_paths.models_dir,"microsoft","TRELLIS-image-large","ckpts","ss_dec_conv3d_16l8_fp16.safetensors")
@@ -435,6 +458,9 @@ class Trellis2MeshWithVoxelGenerator:
                 "generate_texture_slat": ("BOOLEAN", {"default":True}),
                 "use_tiled_decoder": ("BOOLEAN", {"default":True}),
             },
+            "optional": {
+                "mask": ("MASK",),
+            },
         }
 
     RETURN_TYPES = ("MESHWITHVOXEL", "BVH", )
@@ -443,10 +469,11 @@ class Trellis2MeshWithVoxelGenerator:
     CATEGORY = "Trellis2Wrapper"
     OUTPUT_NODE = True
 
-    def process(self, pipeline, image, seed, pipeline_type, sparse_structure_steps, shape_steps, texture_steps, max_num_tokens, max_views, sparse_structure_resolution, generate_texture_slat, use_tiled_decoder):
+    def process(self, pipeline, image, seed, pipeline_type, sparse_structure_steps, shape_steps, texture_steps, max_num_tokens, max_views, sparse_structure_resolution, generate_texture_slat, use_tiled_decoder, mask=None):
         reset_cuda()
-        
+
         images = tensor_batch_to_pil_list(image, max_views=max_views)
+        images = apply_mask_to_images(images, mask)
         image_in = images[0] if len(images) == 1 else images
         
         sparse_structure_sampler_params = {"steps":sparse_structure_steps}
@@ -1243,6 +1270,9 @@ class Trellis2MeshWithVoxelAdvancedGenerator:
                 "texture_guidance_interval_end": ("FLOAT",{"default":0.90,"min":0.00,"max":1.00,"step":0.01}),
                 "use_tiled_decoder": ("BOOLEAN", {"default":True}),
             },
+            "optional": {
+                "mask": ("MASK",),
+            },
         }
 
     RETURN_TYPES = ("MESHWITHVOXEL","BVH", )
@@ -1251,18 +1281,18 @@ class Trellis2MeshWithVoxelAdvancedGenerator:
     CATEGORY = "Trellis2Wrapper"
     OUTPUT_NODE = True
 
-    def process(self, pipeline, image, seed, pipeline_type, sparse_structure_steps, 
-        sparse_structure_guidance_strength, 
+    def process(self, pipeline, image, seed, pipeline_type, sparse_structure_steps,
+        sparse_structure_guidance_strength,
         sparse_structure_guidance_rescale,
         sparse_structure_rescale_t,
-        shape_steps, 
-        shape_guidance_strength, 
+        shape_steps,
+        shape_guidance_strength,
         shape_guidance_rescale,
-        shape_rescale_t,        
-        texture_steps, 
-        texture_guidance_strength, 
+        shape_rescale_t,
+        texture_steps,
+        texture_guidance_strength,
         texture_guidance_rescale,
-        texture_rescale_t,        
+        texture_rescale_t,
         max_num_tokens,
         max_views,
         sparse_structure_resolution,
@@ -1274,10 +1304,12 @@ class Trellis2MeshWithVoxelAdvancedGenerator:
         texture_guidance_interval_start,
         texture_guidance_interval_end,
         use_tiled_decoder,
+        mask=None,
         ):
         reset_cuda()
-        
+
         images = tensor_batch_to_pil_list(image, max_views=max_views)
+        images = apply_mask_to_images(images, mask)
         image_in = images[0] if len(images) == 1 else images
         
         sparse_structure_guidance_interval = [sparse_structure_guidance_interval_start,sparse_structure_guidance_interval_end]
@@ -1350,6 +1382,10 @@ class Trellis2MeshWithVoxelMultiViewGenerator:
                 "back_image": ("IMAGE",),
                 "left_image": ("IMAGE",),
                 "right_image": ("IMAGE",),
+                "front_mask": ("MASK",),
+                "back_mask": ("MASK",),
+                "left_mask": ("MASK",),
+                "right_mask": ("MASK",),
             },
         }
 
@@ -1359,18 +1395,18 @@ class Trellis2MeshWithVoxelMultiViewGenerator:
     CATEGORY = "Trellis2Wrapper"
     OUTPUT_NODE = True
 
-    def process(self, pipeline, front_image, seed, pipeline_type, sparse_structure_steps, 
-        sparse_structure_guidance_strength, 
+    def process(self, pipeline, front_image, seed, pipeline_type, sparse_structure_steps,
+        sparse_structure_guidance_strength,
         sparse_structure_guidance_rescale,
         sparse_structure_rescale_t,
-        shape_steps, 
-        shape_guidance_strength, 
+        shape_steps,
+        shape_guidance_strength,
         shape_guidance_rescale,
-        shape_rescale_t,        
-        texture_steps, 
-        texture_guidance_strength, 
+        shape_rescale_t,
+        texture_steps,
+        texture_guidance_strength,
         texture_guidance_rescale,
-        texture_rescale_t,        
+        texture_rescale_t,
         max_num_tokens,
         sparse_structure_resolution,
         generate_texture_slat,
@@ -1385,17 +1421,18 @@ class Trellis2MeshWithVoxelMultiViewGenerator:
         blend_temperature,
         back_image=None,
         left_image=None,
-        right_image=None):
+        right_image=None,
+        front_mask=None,
+        back_mask=None,
+        left_mask=None,
+        right_mask=None):
 
         reset_cuda()
-        
-        # Convert front image tensor to PIL
-        front_pil = tensor2pil(front_image)
-        
-        # Convert optional view image tensors to PIL
-        back_pil = tensor2pil(back_image) if back_image is not None else None
-        left_pil = tensor2pil(left_image) if left_image is not None else None
-        right_pil = tensor2pil(right_image) if right_image is not None else None        
+
+        front_pil = apply_mask_to_images([tensor2pil(front_image)], front_mask)[0]
+        back_pil = apply_mask_to_images([tensor2pil(back_image)], back_mask)[0] if back_image is not None else None
+        left_pil = apply_mask_to_images([tensor2pil(left_image)], left_mask)[0] if left_image is not None else None
+        right_pil = apply_mask_to_images([tensor2pil(right_image)], right_mask)[0] if right_image is not None else None        
         
         sparse_structure_guidance_interval = [sparse_structure_guidance_interval_start,sparse_structure_guidance_interval_end]
         shape_guidance_interval = [shape_guidance_interval_start,shape_guidance_interval_end]
@@ -1942,21 +1979,8 @@ class Trellis2Remesh:
         # Move data to GPU
         vertices = vertices.cuda()
         faces = faces.cuda()
-        
-        # Initialize CUDA mesh handler
-        cumesh = CuMesh.CuMesh()
-        cumesh.init(vertices, faces)
-        print(f"Current vertices: {cumesh.num_vertices}, faces: {cumesh.num_faces}")        
-        
-        vertices, faces = cumesh.read()
-        
-        del cumesh
-        gc.collect()         
-            
-        # Build BVH for the current mesh to guide remeshing
-        #print(f"Building BVH for current mesh...")
-        #bvh = CuMesh.cuBVH(vertices.detach().clone(), faces.detach().clone())
-            
+
+        print(f"Current vertices: {len(vertices)}, faces: {len(faces)}")
         print("Cleaning mesh...")        
         center = aabb.mean(dim=0)
         scale = (aabb[1] - aabb[0]).max().item()
@@ -2096,6 +2120,9 @@ class Trellis2MeshTexturing:
                 "use_custom_normals": ("BOOLEAN",{"default":False}),
                 "mesh_cluster_threshold_cone_half_angle_rad": ("FLOAT",{"default":60.0,"min":0.0,"max":359.9}),
             },
+            "optional": {
+                "mask": ("MASK",),
+            },
         }
 
     RETURN_TYPES = ("TRIMESH","IMAGE","IMAGE",)
@@ -2104,8 +2131,9 @@ class Trellis2MeshTexturing:
     CATEGORY = "Trellis2Wrapper"
     OUTPUT_NODE = True
 
-    def process(self, pipeline, image, trimesh, seed, texture_steps, texture_guidance_strength, texture_guidance_rescale, texture_rescale_t, resolution, texture_size, texture_alpha_mode, double_side_material, texture_guidance_interval_start, texture_guidance_interval_end, max_views,bake_on_vertices,use_custom_normals,mesh_cluster_threshold_cone_half_angle_rad):
+    def process(self, pipeline, image, trimesh, seed, texture_steps, texture_guidance_strength, texture_guidance_rescale, texture_rescale_t, resolution, texture_size, texture_alpha_mode, double_side_material, texture_guidance_interval_start, texture_guidance_interval_end, max_views,bake_on_vertices,use_custom_normals,mesh_cluster_threshold_cone_half_angle_rad, mask=None):
         images = tensor_batch_to_pil_list(image, max_views=max_views)
+        images = apply_mask_to_images(images, mask)
         image_in = images[0] if len(images) == 1 else images
 
         #image = tensor2pil(image)
@@ -2161,7 +2189,11 @@ class Trellis2MeshTexturingMultiView:
             "optional": {
                 "back_image": ("IMAGE",),
                 "left_image": ("IMAGE",),
-                "right_image": ("IMAGE",),                
+                "right_image": ("IMAGE",),
+                "front_mask": ("MASK",),
+                "back_mask": ("MASK",),
+                "left_mask": ("MASK",),
+                "right_mask": ("MASK",),
             }
         }
 
@@ -2171,39 +2203,40 @@ class Trellis2MeshTexturingMultiView:
     CATEGORY = "Trellis2Wrapper"
     OUTPUT_NODE = True
 
-    def process(self, 
-        pipeline, 
-        front_image, 
-        trimesh, 
-        seed, 
-        texture_steps, 
-        texture_guidance_strength, 
-        texture_guidance_rescale, 
-        texture_rescale_t, 
-        resolution, 
-        texture_size, 
-        texture_alpha_mode, 
-        double_side_material, 
-        texture_guidance_interval_start, 
-        texture_guidance_interval_end, 
+    def process(self,
+        pipeline,
+        front_image,
+        trimesh,
+        seed,
+        texture_steps,
+        texture_guidance_strength,
+        texture_guidance_rescale,
+        texture_rescale_t,
+        resolution,
+        texture_size,
+        texture_alpha_mode,
+        double_side_material,
+        texture_guidance_interval_start,
+        texture_guidance_interval_end,
         bake_on_vertices,
         use_custom_normals,
         mesh_cluster_threshold_cone_half_angle_rad,
         front_axis,
         blend_temperature,
-        back_image = None,
-        left_image = None,
-        right_image = None):
-        
+        back_image=None,
+        left_image=None,
+        right_image=None,
+        front_mask=None,
+        back_mask=None,
+        left_mask=None,
+        right_mask=None):
+
         reset_cuda()
-        
-        # Convert front image tensor to PIL
-        front_pil = tensor2pil(front_image)
-        
-        # Convert optional view image tensors to PIL
-        back_pil = tensor2pil(back_image) if back_image is not None else None
-        left_pil = tensor2pil(left_image) if left_image is not None else None
-        right_pil = tensor2pil(right_image) if right_image is not None else None        
+
+        front_pil = apply_mask_to_images([tensor2pil(front_image)], front_mask)[0]
+        back_pil = apply_mask_to_images([tensor2pil(back_image)], back_mask)[0] if back_image is not None else None
+        left_pil = apply_mask_to_images([tensor2pil(left_image)], left_mask)[0] if left_image is not None else None
+        right_pil = apply_mask_to_images([tensor2pil(right_image)], right_mask)[0] if right_image is not None else None        
         
         texture_guidance_interval = [texture_guidance_interval_start,texture_guidance_interval_end]                
         
@@ -2264,21 +2297,25 @@ class Trellis2PreProcessImage:
                 "image": ("IMAGE",),
                 "padding": ("INT",{"default":0,"min":0,"max":1024}),
                 "remove_background": ("BOOLEAN",{"default":False}),
-            }
+            },
+            "optional": {
+                "mask": ("MASK",),
+            },
         }
     RETURN_TYPES = ("IMAGE",)
     RETURN_NAMES = ("image",)
-    
+
     FUNCTION = "process"
     CATEGORY = "Trellis2Wrapper"
 
-    def process(self, image, padding, remove_background):
+    def process(self, image, padding, remove_background, mask=None):
         image = tensor2pil(image)
-        
+
         if remove_background:
             from rembg import remove
             image = remove(image)
-        
+
+        image = apply_mask_to_images([image], mask)[0]
         image = self.preprocess_image(image)
         
         if padding>0:
@@ -2307,37 +2344,24 @@ class Trellis2PreProcessImage:
 
     def preprocess_image(self, input: Image.Image) -> Image.Image:
         """
-        Preprocess the input image.
+        Preprocess the input image. Expects RGBA input (from apply_mask_to_images).
+        Uses alpha channel to crop to foreground bounding box and premultiply alpha.
         """
-        # if has alpha channel, use it directly; otherwise, remove background
-        has_alpha = False
-        if input.mode == 'RGBA':
-            alpha = np.array(input)[:, :, 3]
-            if not np.all(alpha == 255):
-                has_alpha = True
         max_size = max(input.size)
         scale = min(1, 2048 / max_size)
         if scale < 1:
             input = input.resize((int(input.width * scale), int(input.height * scale)), Image.Resampling.LANCZOS)
-        # if has_alpha:
-            # output = input
-        # else:
-            # input = input.convert('RGB')
-            # if self.low_vram:
-                # self.rembg_model.to(self.device)
-            # output = self.rembg_model(input)
-            # if self.low_vram:
-                # self.rembg_model.cpu()
-        output = input
-        output_np = np.array(output)
+        output_np = np.array(input)
         alpha = output_np[:, :, 3]
         bbox = np.argwhere(alpha > 0.8 * 255)
+        if len(bbox) == 0:
+            return input.convert('RGB')
         bbox = np.min(bbox[:, 1]), np.min(bbox[:, 0]), np.max(bbox[:, 1]), np.max(bbox[:, 0])
         center = (bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2
         size = max(bbox[2] - bbox[0], bbox[3] - bbox[1])
         size = int(size * 1)
         bbox = center[0] - size // 2, center[1] - size // 2, center[0] + size // 2, center[1] + size // 2
-        output = output.crop(bbox)  # type: ignore
+        output = input.crop(bbox)
         output = np.array(output).astype(np.float32) / 255
         output = output[:, :, :3] * output[:, :, 3:4]
         output = Image.fromarray((output * 255).astype(np.uint8))
@@ -2371,6 +2395,9 @@ class Trellis2MeshRefiner:
                 "use_tiled_decoder": ("BOOLEAN", {"default":True}),
                 "max_views": ("INT", {"default": 4, "min": 1, "max": 16}),
             },
+            "optional": {
+                "mask": ("MASK",),
+            },
         }
 
     RETURN_TYPES = ("MESHWITHVOXEL", "BVH", )
@@ -2380,14 +2407,14 @@ class Trellis2MeshRefiner:
     OUTPUT_NODE = True
 
     def process(self, pipeline, trimesh, image, seed, resolution,
-        shape_steps, 
-        shape_guidance_strength, 
+        shape_steps,
+        shape_guidance_strength,
         shape_guidance_rescale,
-        shape_rescale_t,        
-        texture_steps, 
-        texture_guidance_strength, 
+        shape_rescale_t,
+        texture_steps,
+        texture_guidance_strength,
         texture_guidance_rescale,
-        texture_rescale_t,        
+        texture_rescale_t,
         max_num_tokens,
         generate_texture_slat,
         downsampling,
@@ -2396,11 +2423,13 @@ class Trellis2MeshRefiner:
         texture_guidance_interval_start,
         texture_guidance_interval_end,
         use_tiled_decoder,
-        max_views):
+        max_views,
+        mask=None):
 
         reset_cuda()
 
         images = tensor_batch_to_pil_list(image, max_views=max_views)
+        images = apply_mask_to_images(images, mask)
         image_in = images[0] if len(images) == 1 else images
         
         shape_guidance_interval = [shape_guidance_interval_start,shape_guidance_interval_end]

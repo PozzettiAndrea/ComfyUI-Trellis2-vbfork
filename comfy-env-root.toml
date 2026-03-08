@@ -1,2 +1,5 @@
 [cuda]
 packages = ['flash-attn', 'sageattention']
+
+[settings]
+isolate = false
