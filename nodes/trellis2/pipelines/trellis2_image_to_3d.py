@@ -16,11 +16,11 @@ import os
 import folder_paths
 import trimesh
 import o_voxel_vb
-import cumesh
+import cumesh_vb as cumesh
 import nvdiffrast.torch as dr
 import cv2
-import flex_gemm
-from flex_gemm.ops.grid_sample import grid_sample_3d
+import flex_gemm_vb as flex_gemm
+from flex_gemm_vb.ops.grid_sample import grid_sample_3d
 
 import random
 

@@ -160,7 +160,7 @@ class MeshRenderer:
                 elif type == "attr":
                     if isinstance(mesh, MeshWithVoxel):
                         if 'grid_sample_3d' not in globals():
-                            from flex_gemm.ops.grid_sample import grid_sample_3d
+                            from flex_gemm_vb.ops.grid_sample import grid_sample_3d
                         mask = rast[..., -1:] > 0
                         xyz = dr.interpolate(vertices, rast, faces)[0]
                         xyz = ((xyz - mesh.origin) / mesh.voxel_size).reshape(1, -1, 3)
@@ -291,7 +291,7 @@ class MeshRenderer:
                     elif type == "attr":
                         if isinstance(mesh, MeshWithVoxel):
                             if 'grid_sample_3d' not in globals():
-                                from flex_gemm.ops.grid_sample import grid_sample_3d
+                                from flex_gemm_vb.ops.grid_sample import grid_sample_3d
                             mask = rast[..., -1:] > 0
                             xyz = dr.interpolate(vertices, rast, faces_chunk)[0]
                             xyz = ((xyz - mesh.origin) / mesh.voxel_size).reshape(1, -1, 3)

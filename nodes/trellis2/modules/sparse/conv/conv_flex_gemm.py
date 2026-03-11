@@ -3,8 +3,8 @@ import torch
 import torch.nn as nn
 from .. import SparseTensor
 from . import config
-import flex_gemm
-from flex_gemm.ops.spconv import sparse_submanifold_conv3d
+import flex_gemm_vb as flex_gemm
+from flex_gemm_vb.ops.spconv import sparse_submanifold_conv3d
 
 
 def sparse_conv3d_init(self, in_channels, out_channels, kernel_size, stride=1, dilation=1, padding=None, bias=True, indice_key=None):

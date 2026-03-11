@@ -22,14 +22,14 @@ import copy
 
 import pymeshlab
 
-import cumesh as CuMesh
+import cumesh_vb as CuMesh
 import o_voxel_vb
 
 import meshlib.mrmeshnumpy as mrmeshnumpy
 import meshlib.mrmeshpy as mrmeshpy
 
 import nvdiffrast.torch as dr
-from flex_gemm.ops.grid_sample import grid_sample_3d
+from flex_gemm_vb.ops.grid_sample import grid_sample_3d
 
 import comfy.model_management as mm
 from comfy.utils import load_torch_file, ProgressBar, common_upscale
